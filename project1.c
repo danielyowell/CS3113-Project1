@@ -3,24 +3,30 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+/* total created prior to fork */
+int total = 0;
+
 int main(int argc, char* argv[]) {
+
+  /* create child */
   int id = fork();
-  int n;
-  if(id == 0) {
-    n = 1; 
-  }
-  else {
-    n = 6;
-  }
+
+  /* parent waits for child to complete */
   if(id != 0) {
     wait();
   }
-  for(int i = n; i < n + 5; i++) {
-    printf("%d ", i);
-    fflush(stdout);
+
+  /* child code */
+  if(id == 0) {
+    total = 100;
+    printf("child: total is %d\n", total);
   }
+
+  /* run by parent process */
   if(id != 0) {
-    printf("\n");
+    printf("parent: total is %d\n", total);
+    printf("End of simulation\n");
   }
+
   return 0;
 }
