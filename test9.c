@@ -25,8 +25,31 @@ typedef struct
 shared_mem *total;
 
 void process1() {
-    total->value = 72;
-    printf("(child) total is: %d\n", total->value);
+    while(total->value < 100000) {
+        total->value = total->value + 1;
+    }
+    printf("From Process 1: counter = %d.\n", total->value);
+    return;
+}
+void process2() {
+    while(total->value < 200000) {
+        total->value = total->value + 1;
+    }
+    printf("From Process 2: counter = %d.\n", total->value);
+    return;
+}
+void process3() {
+    while(total->value < 300000) {
+        total->value = total->value + 1;
+    }
+    printf("From Process 3: counter = %d.\n", total->value);
+    return;
+}
+void process4() {
+    while(total->value < 500000) {
+        total->value = total->value + 1;
+    }
+    printf("From Process 4: counter = %d.\n", total->value);
     return;
 }
 
@@ -40,23 +63,34 @@ int main(void)
     
     total = (shared_mem*) shmat (shmid, shmadd, 0);
     
-    total->value = 25;
+    total->value = 0;
     printf("current value: %d\n", total->value);
 
     pid_t id = fork();
 
-    /* parent waits for child to complete */
-    if(id != 0) {
-        wait(NULL);
-    }
-
     /* child process */
     if(id == 0) {
         process1();
+        id = fork();
+        if(id == 0) {
+            process2();
+            id = fork();
+            if(id == 0) {
+                process3();
+                id = fork();
+                if(id == 0) {
+                    process4();
+                }
+            }
+        }
     }
 
     /* if parent process */
     if(id != 0) {
+        wait(NULL);
+        wait(NULL);
+        wait(NULL);
+        wait(NULL);
         printf("(parent) total is: %d\n", total->value);
         
         /* what is the difference between detaching and deleting shared memory? */
@@ -65,13 +99,10 @@ int main(void)
             exit (-1);
         }   
         shmctl(shmid, IPC_RMID, NULL); 
+        printf("Process with ID %d has completed.\n", getpid());
     }
 
-    /* child process */
     if(id == 0) {
         printf("Child with ID: %d has just exited.\n", getpid());
-    }
-    else {
-        printf("Parent process has completed.\n");
     }
 }
