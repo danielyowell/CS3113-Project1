@@ -6,12 +6,11 @@
 #include <sys/wait.h>
 #include <stdlib.h>
 #include <sys/mman.h>
-
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <string.h>
 #include <fcntl.h>
-  #include <sys/types.h>
+#include <sys/types.h>
 
 /* key number */
 #define SHMKEY ((key_t) 1497)
@@ -25,6 +24,12 @@ typedef struct
 /* create shared memory (pointer) */
 shared_mem *total;
 
+void process1() {
+    total->value = 72;
+    printf("(child) total is: %d\n", total->value);
+    return;
+}
+
 int main(void)
 {
     int shmid = shmget (SHMKEY, sizeof(int), IPC_CREAT | 0666);
@@ -36,6 +41,7 @@ int main(void)
     total = (shared_mem*) shmat (shmid, shmadd, 0);
     
     total->value = 25;
+    printf("current value: %d\n", total->value);
 
     pid_t id = fork();
 
@@ -46,14 +52,26 @@ int main(void)
 
     /* child process */
     if(id == 0) {
-        total->value = 72;
-        printf("(child) total is: %d\n", total->value);
+        process1();
     }
 
     /* if parent process */
     if(id != 0) {
         printf("(parent) total is: %d\n", total->value);
+        
+        /* what is the difference between detaching and deleting shared memory? */
+        if (shmdt(total) == -1) {
+            perror ("shmdt");
+            exit (-1);
+        }   
+        shmctl(shmid, IPC_RMID, NULL); 
     }
 
-    printf("Process completed\n");
+    /* child process */
+    if(id == 0) {
+        printf("Child with ID: %d has just exited.\n", getpid());
+    }
+    else {
+        printf("Parent process has completed.\n");
+    }
 }
