@@ -1,4 +1,7 @@
-// PROOF OF CONCEPT: SHARED MEMORY (the hard way)
+// PROJECT 1
+// Written by: Daniel Yowell
+// @danielyowell
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <errno.h>
@@ -29,7 +32,6 @@ void process1() {
         total->value = total->value + 1;
     }
     printf("From Process 1: counter = %d.\n", total->value);
-    printf("Child with ID: %d has just exited.\n", getpid());
     return;
 }
 void process2() {
@@ -37,7 +39,6 @@ void process2() {
         total->value = total->value + 1;
     }
     printf("From Process 2: counter = %d.\n", total->value);
-    printf("Child with ID: %d has just exited.\n", getpid());
     return;
 }
 void process3() {
@@ -45,7 +46,6 @@ void process3() {
         total->value = total->value + 1;
     }
     printf("From Process 3: counter = %d.\n", total->value);
-    printf("Child with ID: %d has just exited.\n", getpid());
     return;
 }
 void process4() {
@@ -53,7 +53,6 @@ void process4() {
         total->value = total->value + 1;
     }
     printf("From Process 4: counter = %d.\n", total->value);
-    printf("Child with ID: %d has just exited.\n", getpid());
     return;
 }
 
@@ -71,39 +70,53 @@ int main(void)
     /* printf("current value: %d\n", total->value); */
 
     pid_t id;
-    
+    int cpid;
+
     id = fork();
-    /* child process */
+    // CHILD 1
     if(id == 0) {
         process1();
     }
+    // PARENT
     if(id != 0) {
-        wait(NULL);
+        cpid = wait(NULL);
+        printf("Child with ID: %d has just exited.\n", cpid);
         id = fork();
+        // CHILD 2
         if(id == 0) {
             process2();
         }
+        // PARENT
         if(id != 0) {
-            wait(NULL);
+            cpid = wait(NULL);
+            printf("Child with ID: %d has just exited.\n", cpid);
             id = fork();
+            // CHILD 3
             if(id == 0) {
                 process3();
             }
+            // PARENT
             if(id != 0) {
-                wait(NULL);
+                cpid = wait(NULL);
+                printf("Child with ID: %d has just exited.\n", cpid);
                 id = fork();
+                // CHILD 4
                 if(id == 0) {
                     process4();
                 }
-                /* this is the parent process */
+                // PARENT
                 if(id != 0) {
-                    wait(NULL);
-                    /* what is the difference between detaching and deleting shared memory? */
-                            if (shmdt(total) == -1) {
-                                perror ("shmdt");
-                                exit (-1);
-                            }   
-                            shmctl(shmid, IPC_RMID, NULL); 
+                    cpid = wait(NULL);
+                    printf("Child with ID: %d has just exited.\n", cpid);
+                    
+                    // detach shared memory
+                    if (shmdt(total) == -1) {
+                        perror ("shmdt");
+                        exit (-1);
+                    }   
+                    // delete shared memory
+                    shmctl(shmid, IPC_RMID, NULL); 
+
                     printf("\nEnd of simulation.\n");
                 }
             }
